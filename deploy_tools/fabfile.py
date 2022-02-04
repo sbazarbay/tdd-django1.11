@@ -1,7 +1,7 @@
 import random
 
-from fabric.contrib.files import append, exists
 from fabric.api import cd, env, local, run
+from fabric.contrib.files import append, exists
 
 REPO_URL = "git@github.com:sbazarbay/tdd-django1.11.git"
 
