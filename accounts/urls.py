@@ -1,5 +1,6 @@
 from django.conf.urls import url
 from django.contrib.auth.views import logout  # using deprecated method
+
 from accounts import views
 
 urlpatterns = [
