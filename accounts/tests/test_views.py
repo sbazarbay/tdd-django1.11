@@ -25,13 +25,9 @@ class SendLoginEmailViewTest(TestCase):
             "/accounts/send_login_email", data={"email": "edith@example.com"}
         )
 
-        token = Token.objects.first()
-        expected_url = f"http://testserver/accounts/login?token={token.uid}"
-
         self.assertEqual(mock_send_mail.called, True)
         (subject, body, from_email, to_list), kwargs = mock_send_mail.call_args
         self.assertEqual(subject, "Your login link for Superlists")
-        self.assertIn(expected_url, body)
         self.assertEqual(from_email, "noreply@superlists")
         self.assertEqual(to_list, ["edith@example.com"])
 
@@ -47,6 +43,17 @@ class SendLoginEmailViewTest(TestCase):
             "Check your email, we've sent you a link you can use to log in.",
         )
         self.assertEqual(message.tags, "success")
+
+    @patch("accounts.views.send_mail")
+    def test_sends_link_to_login_using_token_uid(self, mock_send_mail):
+        self.client.post(
+            "/accounts/send_login_email", data={"email": "edith@example.com"}
+        )
+
+        token: Token = Token.objects.first()
+        expected_url = f"http://testserver/accounts/login?token={token.uid}"
+        (subject, body, from_email, to_list), kwargs = mock_send_mail.call_args
+        self.assertIn(expected_url, body)
 
 
 @patch("accounts.views.auth")
