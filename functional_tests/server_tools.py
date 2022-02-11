@@ -7,7 +7,7 @@ def _get_manage_dot_py(host):
 
 
 def _get_server_env_vars(host):
-    env_lines: str = run(f"cat ~/sits/{host}/.env")
+    env_lines: str = run(f"cat ~/sites/{host}/.env")
     env_lines = env_lines.splitlines()
     return dict(line.split("=") for line in env_lines if line)
 
