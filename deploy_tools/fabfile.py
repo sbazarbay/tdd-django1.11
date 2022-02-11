@@ -1,5 +1,5 @@
 import random
-
+import os
 from fabric.api import cd, env, local, run
 from fabric.contrib.files import append, exists
 
@@ -42,6 +42,8 @@ def _create_or_update_dotenv():
             random.SystemRandom().choices("abcdefghijklmnopqrstuvwxyz0123456789", k=50)
         )
         append(".env", f"DJANGO_SECRET_KEY={new_secret}")
+    email_password = os.environ["EMAIL_PASSWORD"]
+    append(".env", f"EMAIL_PASSWORD={email_password}")
 
 
 def _update_static_files():
