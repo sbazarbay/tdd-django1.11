@@ -1,9 +1,9 @@
-import os
-import imaplib
-import re
 import email
-from email.header import decode_header
+import imaplib
+import os
+import re
 import time
+from email.header import decode_header
 
 from django.core import mail
 from selenium.webdriver.common.keys import Keys
