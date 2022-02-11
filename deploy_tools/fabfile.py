@@ -1,5 +1,6 @@
-import random
 import os
+import random
+
 from fabric.api import cd, env, local, run
 from fabric.contrib.files import append, exists
 
