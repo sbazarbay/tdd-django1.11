@@ -1,6 +1,6 @@
-from django.shortcuts import redirect, render
-from django.core.handlers.wsgi import WSGIRequest
 from django.contrib.auth import get_user_model
+from django.core.handlers.wsgi import WSGIRequest
+from django.shortcuts import redirect, render
 
 from lists.forms import ExistingListItemForm, ItemForm, NewListForm
 from lists.models import List
@@ -24,7 +24,7 @@ def view_list(request, list_id):
     return render(request, "list.html", {"list": list_, "form": form})
 
 
-def new_list(request):
+def new_list(request: WSGIRequest):
     form = NewListForm(data=request.POST)
     if form.is_valid():
         list_ = form.save(owner=request.user)
