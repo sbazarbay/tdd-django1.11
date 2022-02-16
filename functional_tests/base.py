@@ -1,18 +1,18 @@
-from datetime import datetime
 import os
 import time
-from django.conf import settings
+from datetime import datetime
 
+from django.conf import settings
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from functional_tests.management.commands.create_session import (
-    create_pre_authenticated_session,
-)
 
-from functional_tests.server_tools import create_session_on_server, reset_database
+from functional_tests.management.commands.create_session import \
+    create_pre_authenticated_session
+from functional_tests.server_tools import (create_session_on_server,
+                                           reset_database)
 
 MAX_WAIT = 5
 SCREEN_DUMP_LOCATION = os.path.join(

@@ -1,6 +1,6 @@
-from functional_tests.base import FunctionalTest
 from selenium import webdriver
 
+from functional_tests.base import FunctionalTest
 from functional_tests.list_page import ListPage
 from functional_tests.my_lists_page import MyListsPage
 

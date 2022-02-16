@@ -1,5 +1,6 @@
-from functional_tests.base import FunctionalTest, wait
 from selenium.webdriver.common.keys import Keys
+
+from functional_tests.base import FunctionalTest, wait
 
 
 class ListPage(object):
