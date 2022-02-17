@@ -14,3 +14,6 @@ class MyListsPage(object):
             )
         )
         return self
+
+    def go_to_list_page(self, list_name):
+        self.test.browser.find_element_by_link_text(list_name).click()

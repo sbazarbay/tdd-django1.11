@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 
 from functional_tests.base import FunctionalTest
 from functional_tests.pages.list_page import ListPage
+from functional_tests.pages.my_lists_page import MyListsPage
 
 User = get_user_model()
 
@@ -18,13 +19,13 @@ class MyListsTest(FunctionalTest):
         first_list_url = self.browser.current_url
 
         # She notices a "My lists" link, for the first time.
-        self.browser.find_element_by_link_text("My lists").click()
+        my_lists_page = MyListsPage(self).go_to_my_lists_page()
 
         # She sees that her list is in there, named according to its first list item
         self.wait_for(
             lambda: self.browser.find_element_by_link_text("Reticulate splines")
         )
-        self.browser.find_element_by_link_text("Reticulate splines").click()
+        my_lists_page.go_to_list_page("Reticulate splines")
         self.wait_for(
             lambda: self.assertEqual(self.browser.current_url, first_list_url)
         )
@@ -35,9 +36,9 @@ class MyListsTest(FunctionalTest):
         second_list_url = self.browser.current_url
 
         # Under "My lists", her new list appears
-        self.browser.find_element_by_link_text("My lists").click()
+        my_lists_page.go_to_my_lists_page()
         self.wait_for(lambda: self.browser.find_element_by_link_text("Click cows"))
-        self.browser.find_element_by_link_text("Click cows").click()
+        my_lists_page.go_to_list_page("Click cows")
         self.wait_for(
             lambda: self.assertEqual(self.browser.current_url, second_list_url)
         )
