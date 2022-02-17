@@ -1,9 +1,10 @@
 from unittest import skip
+
 from selenium import webdriver
 
 from functional_tests.base import FunctionalTest
-from functional_tests.list_page import ListPage
-from functional_tests.my_lists_page import MyListsPage
+from functional_tests.pages.list_page import ListPage
+from functional_tests.pages.my_lists_page import MyListsPage
 
 
 def quit_if_possible(browser: webdriver.Firefox):
@@ -44,10 +45,10 @@ class SharingTest(FunctionalTest):
 
         # Oniciferous now goes to the lists page with his browser
         self.browser = oni_browser
-        MyListsPage(self).go_to_my_lists_page()
+        my_lists_page = MyListsPage(self).go_to_my_lists_page()
 
         # He sees Edith's list in there!
-        self.browser.find_element_by_link_text("Get help").click()
+        my_lists_page.go_to_list_page("Get help")
 
         # On the list page, Oniciferous can see say that it's Edith's list
         self.wait_for(
