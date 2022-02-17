@@ -2,8 +2,8 @@ from unittest import skip
 from selenium import webdriver
 
 from functional_tests.base import FunctionalTest
-from functional_tests.list_page import ListPage
-from functional_tests.my_lists_page import MyListsPage
+from functional_tests.pages.list_page import ListPage
+from functional_tests.pages.my_lists_page import MyListsPage
 
 
 def quit_if_possible(browser: webdriver.Firefox):
