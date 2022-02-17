@@ -7,10 +7,10 @@ from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 
-from functional_tests.management.commands.create_session import (
-    create_pre_authenticated_session,
-)
-from functional_tests.server_tools import create_session_on_server, reset_database
+from functional_tests.management.commands.create_session import \
+    create_pre_authenticated_session
+from functional_tests.server_tools import (create_session_on_server,
+                                           reset_database)
 
 MAX_WAIT = 10
 SCREEN_DUMP_LOCATION = os.path.join(
