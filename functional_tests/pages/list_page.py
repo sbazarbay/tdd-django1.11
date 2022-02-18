@@ -24,8 +24,11 @@ class ListPage(object):
     def share_list_with(self, email):
         self.get_share_box().send_keys(email)
         self.get_share_box().send_keys(Keys.ENTER)
-        share_list_items = [item.text for item in self.get_shared_with_list()]
-        self.test.wait_for(lambda: self.test.assertIn(email, share_list_items))
+        self.test.wait_for(
+            lambda: self.test.assertIn(
+                email, [item.text for item in self.get_shared_with_list()]
+            )
+        )
 
     def get_table_rows(self):
         return self.test.browser.find_elements_by_css_selector("#id_list_table tr")

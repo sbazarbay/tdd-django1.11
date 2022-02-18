@@ -35,3 +35,13 @@ def new_list(request: WSGIRequest):
 def my_lists(request, email):
     owner = User.objects.get(email=email)
     return render(request, "my_lists.html", {"owner": owner})
+
+
+def share_list(request: WSGIRequest, list_id):
+    user_email = request.POST.get("sharee")
+    list_: List = List.objects.get(pk=list_id)
+    if request.method == "POST" and user_email:
+        user = User.objects.get(email=user_email)
+        list_.shared_with.add(user)
+
+    return redirect(list_)
