@@ -6,8 +6,8 @@ from django.http import HttpRequest
 from django.test import TestCase
 from django.utils.html import escape
 
-from lists.forms import (DUPLICATE_ITEM_ERROR, EMPTY_ITEM_ERROR,
-                         ExistingListItemForm, ItemForm)
+from lists.forms import (DUPLICATE_ITEM_ERROR, EMPTY_ITEM_ERROR, ExistingListItemForm,
+                         ItemForm)
 from lists.models import Item, List
 from lists.views import new_list
 
@@ -52,7 +52,7 @@ class ListViewTest(TestCase):
         self.assertNotContains(response, "other list item 2")
 
     def test_can_save_a_post_request_to_an_existing_list(self):
-        # other_list = List.objects.create()
+        List.objects.create()
         correct_list = List.objects.create()
 
         self.client.post(
@@ -65,7 +65,7 @@ class ListViewTest(TestCase):
         self.assertEqual(new_item.list, correct_list)
 
     def test_post_redirects_to_list_view(self):
-        # other_list = List.objects.create()
+        List.objects.create()
         correct_list = List.objects.create()
 
         response = self.client.post(
@@ -191,3 +191,18 @@ class MyListsTest(TestCase):
         correct_user = User.objects.create(email="a@b.com")
         response = self.client.get("/lists/users/a@b.com/")
         self.assertEqual(response.context["owner"], correct_user)
+
+
+class ShareListTest(TestCase):
+    def test_post_redirects_to_lists_page(self):
+        list_: List = List.objects.create()
+        response = self.client.post(f"/lists/{list_.pk}/share")
+        self.assertRedirects(response, f"/lists/{list_.pk}/")
+
+    # def test_unauthenticated_cant_share_list(self):
+
+    def test_user_added_to_shared_with(self):
+        user = User.objects.create(email="bob@example.com")
+        list_: List = List.objects.create()
+        self.client.post(f"/lists/{list_.pk}/share", data={"sharee": user.email})
+        self.assertIn(user, list_.shared_with.all())
