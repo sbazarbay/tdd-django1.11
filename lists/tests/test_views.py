@@ -111,6 +111,11 @@ class ListViewTest(TestCase):
         self.assertTemplateUsed(response, "list.html")
         self.assertEqual(Item.objects.all().count(), 1)
 
+    def test_display_no_error_messages_on_get_request(self):
+        list_: List = List.objects.create()
+        response = self.client.get(f"/lists/{list_.pk}/")
+        self.assertNotContains(response, escape(EMPTY_ITEM_ERROR))
+
 
 class NewListViewIntegratedTest(TestCase):
     def test_can_save_a_post_request(self):
