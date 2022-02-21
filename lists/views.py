@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.core.handlers.wsgi import WSGIRequest
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect
 from django.views.generic import CreateView, DetailView, FormView
 
 from lists.forms import ExistingListItemForm, ItemForm, NewListForm
@@ -14,7 +14,7 @@ class HomePageView(FormView):
     form_class = ItemForm
 
 
-class ViewAndAddToList(DetailView, CreateView):
+class CreateOrExistingListView(DetailView, CreateView):
     model = List
     template_name = "list.html"
     form_class = ExistingListItemForm
