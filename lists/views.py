@@ -29,16 +29,8 @@ class NewListView(CreateView):
     template_name = "home.html"
 
     def form_valid(self, form: NewListForm):
-        list_ = form.save(owner=self.request.user)
-        return redirect(list_)
-
-
-def new_list(request: WSGIRequest):
-    form = NewListForm(data=request.POST)
-    if form.is_valid():
-        list_ = form.save(owner=request.user)
-        return redirect(list_)
-    return render(request, "home.html", {"form": form})
+        self.object = form.save(owner=self.request.user)
+        return redirect(self.object)
 
 
 def my_lists(request, email):
