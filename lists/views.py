@@ -33,9 +33,10 @@ class NewListView(CreateView):
         return redirect(self.object)
 
 
-def my_lists(request, email):
-    owner = User.objects.get(email=email)
-    return render(request, "my_lists.html", {"owner": owner})
+class MyListsView(DetailView):
+    model = User
+    template_name = "my_lists.html"
+    context_object_name = "owner"
 
 
 def share_list(request: WSGIRequest, list_id):
