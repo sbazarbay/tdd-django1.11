@@ -29,11 +29,5 @@
 <form method="post" action="{% url 'share_list' list.id %}">
   {% csrf_token %}
   {{ share_list_form.shared_with }}
-  {% if share_list_form.errors %}
-    <div class="form-group has-error">
-      <span class="help-block">{{ share_list_form.shared_with.errors }}</span>
-    </div>
-  {% endif %}
-  
 </form>
 {% endblock share_form %}

@@ -15,6 +15,7 @@ class HomePageView(FormView):
     form_class = ItemForm
 
 
+# TODO: Use class inheritance to switch between forms?
 class CreateOrExistingListView(DetailView, CreateView):
     model = List
     template_name = "list.html"
@@ -57,7 +58,9 @@ def share_list(request: WSGIRequest, pk):
     list_: List = List.objects.get(pk=pk)
 
     if request.method == "POST":
-        share_list_form = ShareListForm(for_list=list_, data=request.POST)
+        share_list_form = ShareListForm(
+            for_list=list_, data=request.POST, for_request=request
+        )
         if share_list_form.is_valid():
             share_list_form.save()
 

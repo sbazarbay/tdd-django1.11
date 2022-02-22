@@ -36,12 +36,12 @@
 
     {% if messages %}
     <div class="row">
-      <div class="col-md-8">
+      <div class="col-md-6 col-md-offset-3">
         {% for message in messages %}
           {% if message.level_tag == 'success' %}
             <div class="alert alert-success">{{ message }}</div>
           {% else %}
-          <div class="alert alert-warning">{{ message }}</div>
+          <div class="alert alert-danger">{{ message }}</div>
           {% endif %}
         {% endfor %}
       </div>

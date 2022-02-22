@@ -4,8 +4,14 @@ from unittest.mock import Mock, patch
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from lists.forms import (DUPLICATE_ITEM_ERROR, EMPTY_ITEM_ERROR, USER_NOT_FOUND_ERROR,
-                         ExistingListItemForm, ItemForm, NewListForm, ShareListForm)
+from lists.forms import (
+    DUPLICATE_ITEM_ERROR,
+    EMPTY_ITEM_ERROR,
+    ExistingListItemForm,
+    ItemForm,
+    NewListForm,
+    ShareListForm,
+)
 from lists.models import Item, List
 
 User = get_user_model()
@@ -102,14 +108,9 @@ class ShareListFormTest(unittest.TestCase):
 
         self.assertEqual(form.instance, list_)
 
-    def test_invalid_form_generates_error_message(self):
+    def test_doesnt_exist_form_doesnt_save(self):
         list_: List = List.objects.create()
-        form = ShareListForm(for_list=list_, data={"shared_with": "asdf3"})
-        self.assertFalse(form.is_valid())
-        self.assertEqual(form.errors["shared_with"], [USER_NOT_FOUND_ERROR])
-
-    def test_empty_form_generates_error_message(self):
-        list_: List = List.objects.create()
-        form = ShareListForm(for_list=list_, data={"shared_with": ""})
-        self.assertFalse(form.is_valid())
-        self.assertEqual(form.errors["shared_with"], [USER_NOT_FOUND_ERROR])
+        form = ShareListForm(for_list=list_, data={"shared_with": "asdf3@asdf.com"})
+        self.assertTrue(form.is_valid())
+        shared_list = form.save()
+        self.assertEqual(shared_list.shared_with.count(), 0)

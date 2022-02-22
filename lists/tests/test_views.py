@@ -7,8 +7,14 @@ from django.urls import reverse
 from django.utils.datastructures import MultiValueDict
 from django.utils.html import escape
 
-from lists.forms import (DUPLICATE_ITEM_ERROR, EMPTY_ITEM_ERROR, USER_NOT_FOUND_ERROR,
-                         ExistingListItemForm, ItemForm)
+from lists.forms import (
+    DUPLICATE_ITEM_ERROR,
+    EMPTY_ITEM_ERROR,
+    SHARE_LIST_FAIL,
+    SHARE_LIST_SUCCESS,
+    ExistingListItemForm,
+    ItemForm,
+)
 from lists.models import Item, List
 from lists.views import NewListView
 
@@ -234,11 +240,39 @@ class ShareListTest(TestCase):
         )
         self.assertRedirects(response, f"/lists/{list_.pk}/")
 
-    @unittest.skip
-    def test_invalid_form_submit_renders_error_message(self):
+    def test_success_message_is_sent(self):
+        user = User.objects.create(email="bob@example.com")
         list_: List = List.objects.create()
         response = self.client.post(
-            f"/lists/{list_.pk}/share", data={"shared_with": "asdf"}
+            f"/lists/{list_.pk}/share", data={"shared_with": user.email}, follow=True
         )
-        self.assertEqual(list_.shared_with.count(), 0)
-        self.assertContains(response, escape(USER_NOT_FOUND_ERROR), status_code=302)
+        message = list(response.context["messages"])[0]
+        self.assertEqual(
+            message.message,
+            SHARE_LIST_SUCCESS,
+        )
+        self.assertEqual(message.tags, "success")
+
+    def test_error_message_is_sent_on_invalid_email(self):
+        list_: List = List.objects.create()
+        response = self.client.post(
+            f"/lists/{list_.pk}/share", data={"shared_with": "asdf"}, follow=True
+        )
+        message = list(response.context["messages"])[0]
+        self.assertEqual(
+            message.message,
+            SHARE_LIST_FAIL,
+        )
+        self.assertEqual(message.tags, "error")
+
+    def test_error_message_is_sent_on_empty_email(self):
+        list_: List = List.objects.create()
+        response = self.client.post(
+            f"/lists/{list_.pk}/share", data={"shared_with": ""}, follow=True
+        )
+        message = list(response.context["messages"])[0]
+        self.assertEqual(
+            message.message,
+            SHARE_LIST_FAIL,
+        )
+        self.assertEqual(message.tags, "error")

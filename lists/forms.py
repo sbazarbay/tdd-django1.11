@@ -1,11 +1,13 @@
 from django import forms
+from django.contrib import messages
 from django.contrib.auth import get_user_model
 
 from lists.models import Item, List
 
 EMPTY_ITEM_ERROR = "You can't have an empty list item"
 DUPLICATE_ITEM_ERROR = "You've already got this in your list"
-USER_NOT_FOUND_ERROR = "Given email is invalid or doesn't exist"
+SHARE_LIST_FAIL = "Given email is invalid or doesn't exist in Superlists."
+SHARE_LIST_SUCCESS = "The list has been successfully shared."
 
 User = get_user_model()
 
@@ -53,9 +55,10 @@ class ShareListForm(forms.models.ModelForm):
         model = List
         fields = ("shared_with",)
 
-    def __init__(self, for_list, *args, **kwargs):
+    def __init__(self, for_list, for_request=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.instance = for_list
+        self.request = for_request
 
     shared_with = forms.EmailField(
         widget=forms.widgets.EmailInput(
@@ -63,15 +66,32 @@ class ShareListForm(forms.models.ModelForm):
                 "placeholder": "your-friend@example.com",
             }
         ),
-        error_messages={
-            "required": USER_NOT_FOUND_ERROR,
-            "invalid": USER_NOT_FOUND_ERROR,
-        },
     )
+
+    def is_valid(self) -> bool:
+        result = super().is_valid()
+        if self.request and result is False:
+            messages.error(
+                self.request,
+                SHARE_LIST_FAIL,
+            )
+        return result
 
     def save(self):
         shared_with = self.cleaned_data["shared_with"]
-        user = User.objects.get(pk=shared_with)
-        self.instance.shared_with.add(user)
+        try:
+            user = User.objects.get(pk=shared_with)
+            self.instance.shared_with.add(user)
+            if self.request:
+                messages.success(
+                    self.request,
+                    SHARE_LIST_SUCCESS,
+                )
+        except User.DoesNotExist:
+            if self.request:
+                messages.error(
+                    self.request,
+                    SHARE_LIST_FAIL,
+                )
 
         return self.instance
