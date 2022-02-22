@@ -1,9 +1,10 @@
 from django.contrib.auth import get_user_model
 from django.core.handlers.wsgi import WSGIRequest
 from django.shortcuts import redirect
-from django.views.generic import CreateView, DetailView, FormView
+from django.views.generic import DetailView  # RedirectView,; UpdateView,
+from django.views.generic import CreateView, FormView
 
-from lists.forms import ExistingListItemForm, ItemForm, NewListForm
+from lists.forms import ExistingListItemForm, ItemForm, NewListForm, ShareListForm
 from lists.models import List
 
 User = get_user_model()
@@ -18,6 +19,11 @@ class CreateOrExistingListView(DetailView, CreateView):
     model = List
     template_name = "list.html"
     form_class = ExistingListItemForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["share_list_form"] = ShareListForm(for_list=self.object)
+        return context
 
     def get_form(self):
         self.object = self.get_object()
@@ -41,11 +47,18 @@ class MyListsView(DetailView):
     context_object_name = "owner"
 
 
-def share_list(request: WSGIRequest, list_id):
-    user_email = request.POST.get("sharee")
-    list_: List = List.objects.get(pk=list_id)
-    if request.method == "POST" and user_email:
-        user = User.objects.get(email=user_email)
-        list_.shared_with.add(user)
+# class ShareListView(UpdateView, RedirectView):
+#     model = List
+#     form_class = ShareListForm
+#     template_name = "list.html"
+
+
+def share_list(request: WSGIRequest, pk):
+    list_: List = List.objects.get(pk=pk)
+
+    if request.method == "POST":
+        share_list_form = ShareListForm(for_list=list_, data=request.POST)
+        if share_list_form.is_valid():
+            share_list_form.save()
 
     return redirect(list_)

@@ -7,8 +7,8 @@ from django.urls import reverse
 from django.utils.datastructures import MultiValueDict
 from django.utils.html import escape
 
-from lists.forms import (DUPLICATE_ITEM_ERROR, EMPTY_ITEM_ERROR, ExistingListItemForm,
-                         ItemForm)
+from lists.forms import (DUPLICATE_ITEM_ERROR, EMPTY_ITEM_ERROR, USER_NOT_FOUND_ERROR,
+                         ExistingListItemForm, ItemForm)
 from lists.models import Item, List
 from lists.views import NewListView
 
@@ -218,10 +218,27 @@ class ShareListTest(TestCase):
         response = self.client.post(f"/lists/{list_.pk}/share")
         self.assertRedirects(response, f"/lists/{list_.pk}/")
 
-    # def test_unauthenticated_cant_share_list(self):
+    # TODO: def test_unauthenticated_cant_share_list(self):
 
     def test_user_added_to_shared_with(self):
         user = User.objects.create(email="bob@example.com")
         list_: List = List.objects.create()
-        self.client.post(f"/lists/{list_.pk}/share", data={"sharee": user.email})
+        self.client.post(f"/lists/{list_.pk}/share", data={"shared_with": user.email})
         self.assertIn(user, list_.shared_with.all())
+
+    def test_form_submission_redirects_back_to_list(self):
+        user = User.objects.create(email="bob@example.com")
+        list_: List = List.objects.create()
+        response = self.client.post(
+            f"/lists/{list_.pk}/share", data={"shared_with": user.email}
+        )
+        self.assertRedirects(response, f"/lists/{list_.pk}/")
+
+    @unittest.skip
+    def test_invalid_form_submit_renders_error_message(self):
+        list_: List = List.objects.create()
+        response = self.client.post(
+            f"/lists/{list_.pk}/share", data={"shared_with": "asdf"}
+        )
+        self.assertEqual(list_.shared_with.count(), 0)
+        self.assertContains(response, escape(USER_NOT_FOUND_ERROR), status_code=302)
