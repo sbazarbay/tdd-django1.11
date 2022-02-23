@@ -3,8 +3,9 @@ from django.core.handlers.wsgi import WSGIRequest
 from django.core.mail import send_mail
 from django.shortcuts import redirect
 from django.urls import reverse
-from accounts.forms import LoginForm
+from django.views.generic import RedirectView
 
+from accounts.forms import LoginForm
 from accounts.models import Token
 
 TOKEN_SUCCESS = "Check your email, we've sent you a link you can use to log in."
@@ -31,8 +32,12 @@ def send_login_email(request: WSGIRequest):
     return redirect("/")
 
 
-def login(request: WSGIRequest):
-    user = auth.authenticate(uid=request.GET.get("token"))
-    if user:
-        auth.login(request, user)
-    return redirect("/")
+class LoginView(RedirectView):
+    pattern_name = "home"
+    pass
+
+    def get_redirect_url(self, *args, **kwargs):
+        user = auth.authenticate(uid=self.request.GET.get("token"))
+        if user:
+            auth.login(self.request, user)
+        return super().get_redirect_url(*args, **kwargs)
