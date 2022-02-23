@@ -105,6 +105,5 @@ class ShareListFormTest(unittest.TestCase):
     def test_doesnt_exist_form_doesnt_save(self):
         list_: List = List.objects.create()
         form = ShareListForm(for_list=list_, data={"shared_with": "asdf3@asdf.com"})
-        self.assertTrue(form.is_valid())
-        shared_list = form.save()
-        self.assertEqual(shared_list.shared_with.count(), 0)
+        self.assertFalse(form.is_valid())
+        self.assertEqual(list_.shared_with.count(), 0)

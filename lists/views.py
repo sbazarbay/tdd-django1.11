@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.shortcuts import redirect
 from django.views.generic import CreateView, DetailView, FormView, RedirectView
@@ -5,6 +6,9 @@ from django.views.generic.edit import ModelFormMixin
 
 from lists.forms import ExistingListItemForm, ItemForm, NewListForm, ShareListForm
 from lists.models import List
+
+SHARE_LIST_SUCCESS = "The list has been successfully shared."
+SHARE_LIST_FAIL = "Given email is invalid or doesn't exist in Superlists."
 
 User = get_user_model()
 
@@ -53,13 +57,19 @@ class ShareListView(ModelFormMixin, RedirectView):
     pattern_name = "view_list"
 
     def get_form(self):
-        return self.form_class(
-            for_list=self.get_object(), data=self.request.POST, for_request=self.request
-        )
+        return self.form_class(for_list=self.get_object(), data=self.request.POST)
 
     def post(self, request, *args, **kwargs):
         form = self.get_form()
         if form.is_valid():
+            messages.success(
+                self.request,
+                SHARE_LIST_SUCCESS,
+            )
             return self.form_valid(form)
 
+        messages.error(
+            self.request,
+            SHARE_LIST_FAIL,
+        )
         return super().post(request, *args, **kwargs)

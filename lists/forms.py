@@ -1,13 +1,10 @@
 from django import forms
-from django.contrib import messages
 from django.contrib.auth import get_user_model
 
 from lists.models import Item, List
 
 EMPTY_ITEM_ERROR = "You can't have an empty list item"
 DUPLICATE_ITEM_ERROR = "You've already got this in your list"
-SHARE_LIST_FAIL = "Given email is invalid or doesn't exist in Superlists."
-SHARE_LIST_SUCCESS = "The list has been successfully shared."
 
 User = get_user_model()
 
@@ -55,10 +52,9 @@ class ShareListForm(forms.models.ModelForm):
         model = List
         fields = ("shared_with",)
 
-    def __init__(self, for_list, for_request=None, *args, **kwargs):
+    def __init__(self, for_list, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.instance = for_list
-        self.request = for_request
 
     shared_with = forms.EmailField(
         widget=forms.widgets.EmailInput(
@@ -68,30 +64,18 @@ class ShareListForm(forms.models.ModelForm):
         ),
     )
 
-    def is_valid(self) -> bool:
-        result = super().is_valid()
-        if self.request and result is False:
-            messages.error(
-                self.request,
-                SHARE_LIST_FAIL,
-            )
-        return result
+    def clean_shared_with(self):
+        email = self.cleaned_data["shared_with"]
+        if email:
+            try:
+                User.objects.get(pk=email)
+            except User.DoesNotExist:
+                raise forms.ValidationError("This user does not exist.")
+        return email
 
     def save(self):
         shared_with = self.cleaned_data["shared_with"]
-        try:
-            user = User.objects.get(pk=shared_with)
-            self.instance.shared_with.add(user)
-            if self.request:
-                messages.success(
-                    self.request,
-                    SHARE_LIST_SUCCESS,
-                )
-        except User.DoesNotExist:
-            if self.request:
-                messages.error(
-                    self.request,
-                    SHARE_LIST_FAIL,
-                )
+        user = User.objects.get(pk=shared_with)
+        self.instance.shared_with.add(user)
 
         return self.instance
