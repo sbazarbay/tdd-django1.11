@@ -1,8 +1,6 @@
 from django.contrib.auth import get_user_model
-from django.core.handlers.wsgi import WSGIRequest
 from django.shortcuts import redirect
-from django.views.generic import DetailView  # RedirectView,; UpdateView,
-from django.views.generic import CreateView, FormView
+from django.views.generic import CreateView, DetailView, FormView, RedirectView
 
 from lists.forms import ExistingListItemForm, ItemForm, NewListForm, ShareListForm
 from lists.models import List
@@ -48,20 +46,17 @@ class MyListsView(DetailView):
     context_object_name = "owner"
 
 
-# class ShareListView(UpdateView, RedirectView):
-#     model = List
-#     form_class = ShareListForm
-#     template_name = "list.html"
+class ShareListView(RedirectView):
+    pattern_name = "view_list"
 
+    def get_redirect_url(self, *args, **kwargs):
+        pk = self.request.resolver_match.kwargs["pk"]
+        list_ = List.objects.get(pk=pk)
+        if self.request.method == "POST":
+            share_list_form = ShareListForm(
+                for_list=list_, data=self.request.POST, for_request=self.request
+            )
+            if share_list_form.is_valid():
+                share_list_form.save()
 
-def share_list(request: WSGIRequest, pk):
-    list_: List = List.objects.get(pk=pk)
-
-    if request.method == "POST":
-        share_list_form = ShareListForm(
-            for_list=list_, data=request.POST, for_request=request
-        )
-        if share_list_form.is_valid():
-            share_list_form.save()
-
-    return redirect(list_)
+        return super().get_redirect_url(*args, **kwargs)

@@ -4,14 +4,8 @@ from unittest.mock import Mock, patch
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from lists.forms import (
-    DUPLICATE_ITEM_ERROR,
-    EMPTY_ITEM_ERROR,
-    ExistingListItemForm,
-    ItemForm,
-    NewListForm,
-    ShareListForm,
-)
+from lists.forms import (DUPLICATE_ITEM_ERROR, EMPTY_ITEM_ERROR, ExistingListItemForm,
+                         ItemForm, NewListForm, ShareListForm)
 from lists.models import Item, List
 
 User = get_user_model()

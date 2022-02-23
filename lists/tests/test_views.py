@@ -7,14 +7,8 @@ from django.urls import reverse
 from django.utils.datastructures import MultiValueDict
 from django.utils.html import escape
 
-from lists.forms import (
-    DUPLICATE_ITEM_ERROR,
-    EMPTY_ITEM_ERROR,
-    SHARE_LIST_FAIL,
-    SHARE_LIST_SUCCESS,
-    ExistingListItemForm,
-    ItemForm,
-)
+from lists.forms import (DUPLICATE_ITEM_ERROR, EMPTY_ITEM_ERROR, SHARE_LIST_FAIL,
+                         SHARE_LIST_SUCCESS, ExistingListItemForm, ItemForm)
 from lists.models import Item, List
 from lists.views import NewListView
 
@@ -220,6 +214,7 @@ class MyListsTest(TestCase):
 
 class ShareListTest(TestCase):
     def test_post_redirects_to_lists_page(self):
+        List.objects.create()
         list_: List = List.objects.create()
         response = self.client.post(f"/lists/{list_.pk}/share")
         self.assertRedirects(response, f"/lists/{list_.pk}/")
