@@ -56,7 +56,7 @@ class ShareListView(ModelFormMixin, RedirectView):
     form_class = ShareListForm
     pattern_name = "view_list"
 
-    def get_form(self):
+    def get_form(self) -> ShareListForm:
         return self.form_class(for_list=self.get_object(), data=self.request.POST)
 
     def post(self, request, *args, **kwargs):
