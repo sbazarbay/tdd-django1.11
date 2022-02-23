@@ -73,21 +73,33 @@ class LoginTest(FunctionalTest):
         #     inbox.quit()
 
     def test_can_get_email_link_to_log_in(self):
-        # Edith goes to the awesome superlists site and notices a "Log in" section in
-        # the navbar for the first time
-        # It's telling her to enter her email address, so she does
         if self.staging_server:
             test_email = "c.bazarbai@gmail.com"
         else:
             test_email = "edith@example.com"
+
+        # Edith goes to the awesome superlists site and notices a "Log in" section in
+        # the navbar for the first time
         self.browser.get(self.live_server_url)
+
+        # She accidentally presses enter key, but then sees an error message
+        self.browser.find_element_by_name("email").send_keys(Keys.ENTER)
+        self.wait_for(
+            lambda: self.assertIn(
+                "Please enter a valid email address.",
+                self.browser.find_element_by_css_selector(".alert-danger").text,
+            )
+        )
+
+        # It's telling her to enter a valid email address, so she does
         self.browser.find_element_by_name("email").send_keys(test_email)
         self.browser.find_element_by_name("email").send_keys(Keys.ENTER)
 
         # A message appears telling her an email has been sent
         self.wait_for(
             lambda: self.assertIn(
-                "Check your email", self.browser.find_element_by_tag_name("body").text
+                "Check your email",
+                self.browser.find_element_by_css_selector(".alert-success").text,
             )
         )
 
