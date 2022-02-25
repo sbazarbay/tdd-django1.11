@@ -1,3 +1,4 @@
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 
 from functional_tests.base import FunctionalTest
@@ -29,6 +30,11 @@ class ItemValidationTest(FunctionalTest):
         # And she can submit it successfully
         list_page.get_item_input_box().send_keys(Keys.ENTER)
         list_page.wait_for_row_in_list_table("Buy milk", 1)
+
+        # Edith sees that the page looks like usual, with no errors
+        # already in the form
+        with self.assertRaises(NoSuchElementException):
+            self.get_error_element()
 
         # Preversely, she now decides to submit a second blank list item
         list_page.get_item_input_box().send_keys(Keys.ENTER)

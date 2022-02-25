@@ -2,14 +2,15 @@ import unittest
 from unittest.mock import Mock, patch
 
 from django.contrib.auth import get_user_model
-from django.http import HttpRequest
-from django.test import TestCase
+from django.test import RequestFactory, TestCase
+from django.urls import reverse
+from django.utils.datastructures import MultiValueDict
 from django.utils.html import escape
 
 from lists.forms import (DUPLICATE_ITEM_ERROR, EMPTY_ITEM_ERROR, ExistingListItemForm,
                          ItemForm)
 from lists.models import Item, List
-from lists.views import new_list
+from lists.views import SHARE_LIST_FAIL, SHARE_LIST_SUCCESS, NewListView
 
 User = get_user_model()
 
@@ -110,6 +111,11 @@ class ListViewTest(TestCase):
         self.assertTemplateUsed(response, "list.html")
         self.assertEqual(Item.objects.all().count(), 1)
 
+    def test_display_no_error_messages_on_get_request(self):
+        list_: List = List.objects.create()
+        response = self.client.get(f"/lists/{list_.pk}/")
+        self.assertNotContains(response, escape(EMPTY_ITEM_ERROR))
+
 
 class NewListViewIntegratedTest(TestCase):
     def test_can_save_a_post_request(self):
@@ -132,51 +138,64 @@ class NewListViewIntegratedTest(TestCase):
         self.assertEqual(list_.owner, user)
 
 
-@patch("lists.views.NewListForm")
+@patch("lists.views.NewListView.form_class")
 class NewListViewUnitTest(unittest.TestCase):
     def setUp(self) -> None:
-        self.request = HttpRequest()
-        self.request.POST["text"] = "new list item"
+        path = reverse("new_list")
+        data = {"text": "new list item"}
+        self.request = RequestFactory().post(path=path, data=data)
         self.request.user = Mock()
 
-    def test_passes_post_data_to_newlistform(self, mockNewListForm):
-        new_list(self.request)
-        mockNewListForm.assert_called_once_with(data=self.request.POST)
+    def new_list(self, request):
+        return NewListView.as_view()(request)
 
-    def test_saves_form_with_owner_if_form_valid(self, mockNewListForm):
-        mock_form = mockNewListForm.return_value
+    def test_passes_post_data_to_newlistform(self, mock_form_class):
+        self.new_list(self.request)
+        mock_form_class.assert_called_once_with(
+            initial={},
+            prefix=None,
+            data=self.request.POST,
+            files=MultiValueDict(),
+            instance=None,
+        )
+
+    def test_saves_form_with_owner_if_form_valid(self, mock_form_class):
+        mock_form = mock_form_class.return_value
         mock_form.is_valid.return_value = True
-        new_list(self.request)
+        self.new_list(self.request)
         mock_form.save.assert_called_once_with(owner=self.request.user)
 
     @patch("lists.views.redirect")
     def test_redirects_to_form_returned_object_if_form_valid(
-        self, mock_redirect, mockNewListForm
+        self, mock_redirect, mock_form_class
     ):
-        mock_form = mockNewListForm.return_value
+        mock_form = mock_form_class.return_value
         mock_form.is_valid.return_value = True
-        response = new_list(self.request)
+        response = self.new_list(self.request)
         self.assertEqual(response, mock_redirect.return_value)
         mock_redirect.assert_called_once_with(mock_form.save.return_value)
 
-    @patch("lists.views.render")
+    @patch("lists.views.NewListView.response_class")
     def test_renders_home_template_with_form_if_form_invalid(
-        self, mock_render, mockNewListForm
+        self, mock_response_class, mock_form_class
     ):
-        mock_form = mockNewListForm.return_value
+        mock_form = mock_form_class.return_value
         mock_form.is_valid.return_value = False
 
-        response = new_list(self.request)
+        response = self.new_list(self.request)
 
-        self.assertEqual(response, mock_render.return_value)
-        mock_render.assert_called_once_with(
-            self.request, "home.html", {"form": mock_form}
-        )
+        mock_response_class.assert_called_once()
+        self.assertEqual(response, mock_response_class.return_value)
 
-    def test_does_not_save_if_form_invalid(self, mockNewListForm):
-        mock_form = mockNewListForm.return_value
+        _, kwargs = mock_response_class.call_args
+
+        self.assertEqual(kwargs["template"], ["home.html"])
+        self.assertEqual(kwargs["context"]["form"], mock_form)
+
+    def test_does_not_save_if_form_invalid(self, mock_form_class):
+        mock_form = mock_form_class.return_value
         mock_form.is_valid.return_value = False
-        new_list(self.request)
+        self.new_list(self.request)
         self.assertFalse(mock_form.save.called)
 
 
@@ -194,15 +213,75 @@ class MyListsTest(TestCase):
 
 
 class ShareListTest(TestCase):
-    def test_post_redirects_to_lists_page(self):
+    def test_get_redirects_to_lists_page(self):
+        List.objects.create()
         list_: List = List.objects.create()
-        response = self.client.post(f"/lists/{list_.pk}/share")
+        response = self.client.get(f"/lists/{list_.pk}/share")
         self.assertRedirects(response, f"/lists/{list_.pk}/")
 
-    # def test_unauthenticated_cant_share_list(self):
-
     def test_user_added_to_shared_with(self):
+        User.objects.create(email="wrong@email.com")
         user = User.objects.create(email="bob@example.com")
         list_: List = List.objects.create()
-        self.client.post(f"/lists/{list_.pk}/share", data={"sharee": user.email})
+        self.client.post(f"/lists/{list_.pk}/share", data={"shared_with": user.email})
         self.assertIn(user, list_.shared_with.all())
+        self.assertEqual(list_.shared_with.count(), 1)
+
+    def test_form_submission_redirects_back_to_list(self):
+        user = User.objects.create(email="bob@example.com")
+        list_: List = List.objects.create()
+        response = self.client.post(
+            f"/lists/{list_.pk}/share", data={"shared_with": user.email}
+        )
+        self.assertRedirects(response, f"/lists/{list_.pk}/")
+
+    def test_success_message_is_sent(self):
+        user = User.objects.create(email="bob@example.com")
+        list_: List = List.objects.create()
+        response = self.client.post(
+            f"/lists/{list_.pk}/share", data={"shared_with": user.email}, follow=True
+        )
+        message = list(response.context["messages"])[0]
+        self.assertEqual(
+            message.message,
+            SHARE_LIST_SUCCESS,
+        )
+        self.assertEqual(message.tags, "success")
+
+    def test_error_message_is_sent_on_invalid_email(self):
+        list_: List = List.objects.create()
+        response = self.client.post(
+            f"/lists/{list_.pk}/share", data={"shared_with": "asdf"}, follow=True
+        )
+        message = list(response.context["messages"])[0]
+        self.assertEqual(
+            message.message,
+            SHARE_LIST_FAIL,
+        )
+        self.assertEqual(message.tags, "error")
+
+    def test_error_message_is_sent_on_empty_email(self):
+        list_: List = List.objects.create()
+        response = self.client.post(
+            f"/lists/{list_.pk}/share", data={"shared_with": ""}, follow=True
+        )
+        message = list(response.context["messages"])[0]
+        self.assertEqual(
+            message.message,
+            SHARE_LIST_FAIL,
+        )
+        self.assertEqual(message.tags, "error")
+
+    def test_error_message_is_sent_on_doesnt_exist(self):
+        list_: List = List.objects.create()
+        response = self.client.post(
+            f"/lists/{list_.pk}/share", data={"shared_with": "abc@def.ghi"}, follow=True
+        )
+        message = list(response.context["messages"])[0]
+        self.assertEqual(
+            message.message,
+            SHARE_LIST_FAIL,
+        )
+        self.assertEqual(message.tags, "error")
+
+    # TODO: def test_unauthenticated_cant_share_list(self):

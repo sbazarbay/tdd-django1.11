@@ -3,6 +3,7 @@ from unittest.mock import call, patch
 from django.test import TestCase
 
 from accounts.models import Token
+from accounts.views import TOKEN_FAILURE, TOKEN_SUCCESS
 
 
 class SendLoginEmailViewTest(TestCase):
@@ -40,7 +41,7 @@ class SendLoginEmailViewTest(TestCase):
         message = list(response.context["messages"])[0]
         self.assertEqual(
             message.message,
-            "Check your email, we've sent you a link you can use to log in.",
+            TOKEN_SUCCESS,
         )
         self.assertEqual(message.tags, "success")
 
@@ -54,6 +55,35 @@ class SendLoginEmailViewTest(TestCase):
         expected_url = f"http://testserver/accounts/login?token={token.uid}"
         (subject, body, from_email, to_list), kwargs = mock_send_mail.call_args
         self.assertIn(expected_url, body)
+
+    @patch("accounts.views.send_mail")
+    def test_empty_email_doesnt_send_anything(self, mock_send_mail):
+        self.client.post("/accounts/send_login_email", data={"email": ""})
+        self.assertFalse(mock_send_mail.called)
+
+    @patch("accounts.views.send_mail")
+    def test_empty_email_returns_error_message(self, mock_send_mail):
+        response = self.client.post(
+            "/accounts/send_login_email", data={"email": ""}, follow=True
+        )
+        message = list(response.context["messages"])[0]
+        self.assertEqual(
+            message.message,
+            TOKEN_FAILURE,
+        )
+        self.assertEqual(message.tags, "error")
+
+    @patch("accounts.views.send_mail")
+    def test_invalid_email_returns_error_message(self, mock_send_mail):
+        response = self.client.post(
+            "/accounts/send_login_email", data={"email": "123f"}, follow=True
+        )
+        message = list(response.context["messages"])[0]
+        self.assertEqual(
+            message.message,
+            TOKEN_FAILURE,
+        )
+        self.assertEqual(message.tags, "error")
 
 
 @patch("accounts.views.auth")

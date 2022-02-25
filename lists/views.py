@@ -1,47 +1,75 @@
+from django.contrib import messages
 from django.contrib.auth import get_user_model
-from django.core.handlers.wsgi import WSGIRequest
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect
+from django.views.generic import CreateView, DetailView, FormView, RedirectView
+from django.views.generic.edit import ModelFormMixin
 
-from lists.forms import ExistingListItemForm, ItemForm, NewListForm
+from lists.forms import ExistingListItemForm, ItemForm, NewListForm, ShareListForm
 from lists.models import List
+
+SHARE_LIST_SUCCESS = "The list has been successfully shared."
+SHARE_LIST_FAIL = "Given email is invalid or doesn't exist in Superlists."
 
 User = get_user_model()
 
 
-def home_page(request):
-    return render(request, "home.html", {"form": ItemForm()})
+class HomePageView(FormView):
+    template_name = "home.html"
+    form_class = ItemForm
 
 
-def view_list(request, list_id):
-    list_ = List.objects.get(id=list_id)
-    form = ExistingListItemForm(for_list=list_)
-    if request.method == "POST":
-        form = ExistingListItemForm(for_list=list_, data=request.POST)
+# TODO: Use class inheritance to switch between forms?
+class CreateOrExistingListView(DetailView, CreateView):
+    model = List
+    template_name = "list.html"
+    form_class = ExistingListItemForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["share_list_form"] = ShareListForm(for_list=self.object)
+        return context
+
+    def get_form(self):
+        self.object = self.get_object()
+        if self.request.POST:
+            return self.form_class(for_list=self.object, data=self.request.POST)
+        return self.form_class(for_list=self.object)
+
+
+class NewListView(CreateView):
+    form_class = NewListForm
+    template_name = "home.html"
+
+    def form_valid(self, form: NewListForm):
+        self.object = form.save(owner=self.request.user)
+        return redirect(self.object)
+
+
+class MyListsView(DetailView):
+    model = User
+    template_name = "my_lists.html"
+    context_object_name = "owner"
+
+
+class ShareListView(ModelFormMixin, RedirectView):
+    model = List
+    form_class = ShareListForm
+    pattern_name = "view_list"
+
+    def get_form(self) -> ShareListForm:
+        return self.form_class(for_list=self.get_object(), data=self.request.POST)
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
         if form.is_valid():
-            form.save()
-            return redirect(list_)
+            messages.success(
+                self.request,
+                SHARE_LIST_SUCCESS,
+            )
+            return self.form_valid(form)
 
-    return render(request, "list.html", {"list": list_, "form": form})
-
-
-def new_list(request: WSGIRequest):
-    form = NewListForm(data=request.POST)
-    if form.is_valid():
-        list_ = form.save(owner=request.user)
-        return redirect(list_)
-    return render(request, "home.html", {"form": form})
-
-
-def my_lists(request, email):
-    owner = User.objects.get(email=email)
-    return render(request, "my_lists.html", {"owner": owner})
-
-
-def share_list(request: WSGIRequest, list_id):
-    user_email = request.POST.get("sharee")
-    list_: List = List.objects.get(pk=list_id)
-    if request.method == "POST" and user_email:
-        user = User.objects.get(email=user_email)
-        list_.shared_with.add(user)
-
-    return redirect(list_)
+        messages.error(
+            self.request,
+            SHARE_LIST_FAIL,
+        )
+        return super().post(request, *args, **kwargs)
