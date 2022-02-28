@@ -35,10 +35,12 @@
       server = sinon.fakeServer.create();
       sandbox = sinon.createSandbox();
     });
+
     QUnit.testDone(function () {
       server.restore();
       sandbox.restore();
     });
+
     QUnit.test("errors should be hidden on keypress", function (assert) {
       window.Superlists.initialize();
       $('input[name="text"]').trigger('keypress');
@@ -67,7 +69,8 @@
       assert.equal(request.method, 'GET');
     });
 
-    QUnit.test("updateItems should fill in lists table from ajax response", function (assert) {
+    QUnit.test(
+      "updateItems should fill in lists table from ajax response", function (assert) {
       var url = '/getitems/';
       var responseData = [
         {'id': 101, 'text': 'item 1 text'},
@@ -122,6 +125,35 @@
       assert.equal(window.Superlists.updateItems.lastCall.args, url);
     });
 
+    //QUnit.test(
+    //  "should not intercept form submit if no api url passed in", function (assert) {
+      
+    //});
+
+    QUnit.test("should display errors on post failure", function (assert) {
+      var url = '/listitemsapi/';
+      window.Superlists.initialize(url);
+      server.respondWith('POST', url, [
+        400,
+        {"Content-Type": "application/json"},
+        JSON.stringify({'error': 'something is amiss'})
+      ]);
+      $('.has-error').hide();
+      
+      $('#id_item_form').submit();
+      server.respond();
+
+      assert.equal($('.has-error').is(':visible'), true);
+      assert.equal($('.has-error .help-block').text(), 'something is amiss');
+    });
+
+    //QUnit.test("should hide errors on post success", function (assert) {
+
+    //});
+
+    //QUnit.test("should display generic error if no error json", function (assert) {
+
+    //});
   </script>
 </body>
 
