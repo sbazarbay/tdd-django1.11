@@ -5,7 +5,6 @@ from django.urls import reverse
 from django.views.generic import RedirectView
 from django.views.generic.edit import ModelFormMixin
 
-
 from accounts.forms import LoginForm
 from accounts.models import Token
 

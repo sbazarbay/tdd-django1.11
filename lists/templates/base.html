@@ -54,7 +54,7 @@
           <h1>{% block header_text %}{% endblock header_text %}</h1>
           <h4>The lists are public btw, don't input any sensitive data</h4>
           {% block list_form %}
-            <form method="post" action="{% block form_action %}{% endblock form_action %}">
+            <form id="id_item_form" method="post" action="{% block form_action %}{% endblock form_action %}">
               {% csrf_token %}
               {{ form.text }}
               {% if form.errors %}
@@ -93,12 +93,14 @@
 
   <script src="/static/jquery-3.3.1.min.js"></script>
   <script src="/static/list.js"></script>
-
-  <script>
-    $(document).ready(function () {
-      window.Superlists.initialize();
-    });
-  </script>
+  
+  {% block scripts %}
+    <script>
+      $(document).ready(function () {
+        window.Superlists.initialize();
+      });
+    </script>
+  {% endblock scripts %}
 
 </body>
 
