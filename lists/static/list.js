@@ -2,11 +2,12 @@ window.Superlists = {};
 
 window.Superlists.updateItems = function (url) {
     $.get(url).done(function (response) {
-        var rows = '';
+        var rows = '<tbody>';
         for (var i = 0; i < response.length; i++) {
             var item = response[i];
             rows += '\n<tr><td>' + (i + 1) + ": " + item.text + "</td></tr>";
         }
+        rows += '</tbody>'
         $('#id_list_table').html(rows);
     });
 }
